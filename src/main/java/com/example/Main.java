@@ -1,3 +1,4 @@
+//Samuel
 package com.example;
 
 import java.io.BufferedReader;
@@ -44,7 +45,9 @@ class UsuarioService {
         cargarUsuarios();
     }
 
-    public boolean registrar(String nombre, String correo, String contrasena) {
+    public boolean registrar(String nombre, String correo, String contrasena) 
+    //Josue
+    {
         if (correoExiste(correo)) return false;
 
         Usuario nuevo = new Usuario(nombre, correo, contrasena);
@@ -93,7 +96,7 @@ class UsuarioService {
 
 public class Main {
     private static String codigoSala = null;
-
+//Anderson
     public static String generarCodigo() {
         String caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         Random random = new Random();
@@ -122,6 +125,7 @@ public class Main {
             System.out.print("Opción: ");
             String opcion = scanner.nextLine();
 
+          //Darwin
             switch (opcion) {
                 case "1":
                     System.out.print("Nombre: ");
