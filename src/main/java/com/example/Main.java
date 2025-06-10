@@ -1,4 +1,3 @@
-//Samuel
 package com.example;
 
 import java.io.BufferedReader;
@@ -11,109 +10,18 @@ import java.util.List;
 import java.util.Random;
 import java.util.Scanner;
 
-class Usuario {
-    private String nombre;
-    private String correo;
-    private String contrasena;
-
-    public Usuario(String nombre, String correo, String contrasena) {
-        this.nombre = nombre;
-        this.correo = correo;
-        this.contrasena = contrasena;
-    }
-
-    public String getNombre() { return nombre; }
-    public String getCorreo() { return correo; }
-    public String getContrasena() { return contrasena; }
-
-    public String toCSV() {
-        return nombre + "," + correo + "," + contrasena;
-    }
-
-    public static Usuario fromCSV(String linea) {
-        String[] partes = linea.split(",");
-        if (partes.length != 3) return null;
-        return new Usuario(partes[0], partes[1], partes[2]);
-    }
-}
-
-class UsuarioService {
-    private List<Usuario> usuarios = new ArrayList<>();
-    private final String archivo = "usuarios.txt";
-
-    public UsuarioService() {
-        cargarUsuarios();
-    }
-
-    public boolean registrar(String nombre, String correo, String contrasena) 
-    //Josue
-    {
-        if (correoExiste(correo)) return false;
-
-        Usuario nuevo = new Usuario(nombre, correo, contrasena);
-        usuarios.add(nuevo);
-        guardarUsuario(nuevo);
-        return true;
-    }
-
-    public boolean iniciarSesion(String correo, String contrasena) {
-        for (Usuario u : usuarios) {
-            if (u.getCorreo().equalsIgnoreCase(correo) && u.getContrasena().equals(contrasena)) {
-                System.out.println("✅ Bienvenido, " + u.getNombre());
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean correoExiste(String correo) {
-        return usuarios.stream().anyMatch(u -> u.getCorreo().equalsIgnoreCase(correo));
-    }
-
-    private void guardarUsuario(Usuario usuario) {
-        try (FileWriter fw = new FileWriter(archivo, true)) {
-            fw.write(usuario.toCSV() + "\n");
-        } catch (IOException e) {
-            System.out.println("❌ Error al guardar el usuario.");
-        }
-    }
-
-    private void cargarUsuarios() {
-        File file = new File(archivo);
-        if (!file.exists()) return;
-
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-            String linea;
-            while ((linea = reader.readLine()) != null) {
-                Usuario u = Usuario.fromCSV(linea);
-                if (u != null) usuarios.add(u);
-            }
-        } catch (IOException e) {
-            System.out.println("❌ Error al cargar usuarios.");
-        }
-    }
-}
-
 public class Main {
-    private static String codigoSala = null;
-//Anderson
-    public static String generarCodigo() {
-        String caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        Random random = new Random();
-        StringBuilder codigo = new StringBuilder();
-
-        for (int i = 0; i < 6; i++) {
-            int indice = random.nextInt(caracteres.length());
-            codigo.append(caracteres.charAt(indice));
-        }
-        return codigo.toString();
-    }
+    static String archivoUsuarios = "usuarios.txt";
+    static List<String[]> usuarios = new ArrayList<>();
+    static String codigoSala = null;
+    static List<String[]> usuariosEnSala = new ArrayList<>();
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        UsuarioService usuarioService = new UsuarioService();
-
+        String[] usuarioActual = null;
         boolean sesionIniciada = false;
+
+        cargarUsuarios();
 
         while (true) {
             System.out.println("\n=== Menú Principal ===");
@@ -121,11 +29,11 @@ public class Main {
             System.out.println("2. Iniciar sesión");
             System.out.println("3. Crear sala de llamadas");
             System.out.println("4. Unirse a sala");
-            System.out.println("5. Salir");
+            System.out.println("5. Iniciar chat por turnos");
+            System.out.println("6. Salir");
             System.out.print("Opción: ");
             String opcion = scanner.nextLine();
 
-          //Darwin
             switch (opcion) {
                 case "1":
                     System.out.print("Nombre: ");
@@ -135,10 +43,11 @@ public class Main {
                     System.out.print("Contraseña: ");
                     String contrasena = scanner.nextLine();
 
-                    if (usuarioService.registrar(nombre, correo, contrasena)) {
-                        System.out.println("✅ Registro exitoso.");
+                    if (correoExiste(correo)) {
+                        System.out.println("⚠ El correo ya está registrado.");
                     } else {
-                        System.out.println("⚠️ El correo ya está registrado.");
+                        registrarUsuario(nombre, correo, contrasena);
+                        System.out.println("✅ Registro exitoso.");
                     }
                     break;
 
@@ -148,8 +57,10 @@ public class Main {
                     System.out.print("Contraseña: ");
                     String loginContrasena = scanner.nextLine();
 
-                    if (usuarioService.iniciarSesion(loginCorreo, loginContrasena)) {
+                    usuarioActual = iniciarSesion(loginCorreo, loginContrasena);
+                    if (usuarioActual != null) {
                         sesionIniciada = true;
+                        System.out.println("✅ Bienvenido, " + usuarioActual[0]);
                     } else {
                         System.out.println("❌ Datos incorrectos.");
                     }
@@ -157,7 +68,7 @@ public class Main {
 
                 case "3":
                     if (!sesionIniciada) {
-                        System.out.println("⚠️ Debes iniciar sesión primero.");
+                        System.out.println("⚠ Debes iniciar sesión primero.");
                     } else {
                         codigoSala = generarCodigo();
                         System.out.println("✅ Sala creada exitosamente.");
@@ -167,15 +78,17 @@ public class Main {
 
                 case "4":
                     if (!sesionIniciada) {
-                        System.out.println("⚠️ Debes iniciar sesión primero.");
+                        System.out.println("⚠ Debes iniciar sesión primero.");
                     } else if (codigoSala == null) {
-                        System.out.println("⚠️ No hay salas creadas aún. Crea una sala primero.");
+                        System.out.println("⚠ No hay salas creadas aún.");
                     } else {
                         System.out.print("Ingrese el código de la sala: ");
                         String codigoIngresado = scanner.nextLine().toUpperCase();
-
                         if (codigoIngresado.equals(codigoSala)) {
-                            System.out.println("✅ Has ingresado a la sala correctamente.");
+                            if (!usuariosEnSala.contains(usuarioActual)) {
+                                usuariosEnSala.add(usuarioActual);
+                            }
+                            System.out.println("✅ Has ingresado a la sala.");
                         } else {
                             System.out.println("❌ Código incorrecto.");
                         }
@@ -183,12 +96,103 @@ public class Main {
                     break;
 
                 case "5":
+                    if (!sesionIniciada || usuarioActual == null) {
+                        System.out.println("⚠ Debes iniciar sesión primero.");
+                    } else if (codigoSala == null || !usuariosEnSala.contains(usuarioActual)) {
+                        System.out.println("⚠ Debes estar en una sala.");
+                    } else {
+                        iniciarChat(scanner);
+                    }
+                    break;
+
+                case "6":
                     System.out.println("👋 Hasta luego.");
                     scanner.close();
                     return;
 
                 default:
-                    System.out.println("⚠️ Opción no válida.");
+                    System.out.println("⚠ Opción no válida.");
+            }
+        }
+    }
+
+    static void cargarUsuarios() {
+        File file = new File(archivoUsuarios);
+        if (!file.exists()) return;
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String linea;
+            while ((linea = reader.readLine()) != null) {
+                String[] partes = linea.split(",");
+                if (partes.length == 3) {
+                    usuarios.add(partes);
+                }
+            }
+        } catch (IOException e) {
+            System.out.println("❌ Error al cargar usuarios.");
+        }
+    }
+
+    static void registrarUsuario(String nombre, String correo, String contrasena) {
+        try (FileWriter fw = new FileWriter(archivoUsuarios, true)) {
+            fw.write(nombre + "," + correo + "," + contrasena + "\n");
+            usuarios.add(new String[]{nombre, correo, contrasena});
+        } catch (IOException e) {
+            System.out.println("❌ Error al guardar el usuario.");
+        }
+    }
+
+    static boolean correoExiste(String correo) {
+        for (String[] u : usuarios) {
+            if (u[1].equalsIgnoreCase(correo)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static String[] iniciarSesion(String correo, String contrasena) {
+        for (String[] u : usuarios) {
+            if (u[1].equalsIgnoreCase(correo) && u[2].equals(contrasena)) {
+                return u;
+            }
+        }
+        return null;
+    }
+
+    static String generarCodigo() {
+        String caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        Random random = new Random();
+        StringBuilder codigo = new StringBuilder();
+        for (int i = 0; i < 6; i++) {
+            int indice = random.nextInt(caracteres.length());
+            codigo.append(caracteres.charAt(indice));
+        }
+        return codigo.toString();
+    }
+
+    static void iniciarChat(Scanner scanner) {
+        if (usuariosEnSala.isEmpty()) {
+            System.out.println("⚠ No hay usuarios en la sala.");
+            return;
+        }
+
+        System.out.println("🟢 Chat iniciado. Escribe 'salir' para terminar.");
+
+        boolean chatActivo = true;
+        int turno = 0;
+
+        while (chatActivo) {
+            String[] usuario = usuariosEnSala.get(turno);
+            System.out.print(usuario[0] + " >> ");
+            String mensaje = scanner.nextLine();
+
+            if (mensaje.equalsIgnoreCase("salir")) {
+                System.out.println("🔚 Chat finalizado.");
+                chatActivo = false;
+            } else {
+                System.out.println(usuario[0] + " dijo: " + mensaje);
+                turno = (turno + 1) % usuariosEnSala.size();
             }
         }
     }

@@ -1,2 +1,5 @@
 darwin,darwinflorezcardenas@gmail.com,1234
 darwin,darwinflorez,1234
+samuel,samu12,12345
+darwinestiven,stiven@12345,123456
+darwin,dar,123456
