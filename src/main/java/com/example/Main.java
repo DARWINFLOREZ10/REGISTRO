@@ -44,7 +44,7 @@ public class Main {
                     String contrasena = scanner.nextLine();
 
                     if (correoExiste(correo)) {
-                        System.out.println("⚠ El correo ya está registrado.");
+                        System.out.println("⚠️ El correo ya está registrado.");
                     } else {
                         registrarUsuario(nombre, correo, contrasena);
                         System.out.println("✅ Registro exitoso.");
@@ -68,7 +68,7 @@ public class Main {
 
                 case "3":
                     if (!sesionIniciada) {
-                        System.out.println("⚠ Debes iniciar sesión primero.");
+                        System.out.println("⚠️Debes iniciar sesión primero.");
                     } else {
                         codigoSala = generarCodigo();
                         System.out.println("✅ Sala creada exitosamente.");
@@ -78,9 +78,9 @@ public class Main {
 
                 case "4":
                     if (!sesionIniciada) {
-                        System.out.println("⚠ Debes iniciar sesión primero.");
+                        System.out.println("⚠️ Debes iniciar sesión primero.");
                     } else if (codigoSala == null) {
-                        System.out.println("⚠ No hay salas creadas aún.");
+                        System.out.println("⚠️ No hay salas creadas aún.");
                     } else {
                         System.out.print("Ingrese el código de la sala: ");
                         String codigoIngresado = scanner.nextLine().toUpperCase();
@@ -97,9 +97,9 @@ public class Main {
 
                 case "5":
                     if (!sesionIniciada || usuarioActual == null) {
-                        System.out.println("⚠ Debes iniciar sesión primero.");
+                        System.out.println("⚠️Debes iniciar sesión primero.");
                     } else if (codigoSala == null || !usuariosEnSala.contains(usuarioActual)) {
-                        System.out.println("⚠ Debes estar en una sala.");
+                        System.out.println("⚠️ Debes estar en una sala.");
                     } else {
                         iniciarChat(scanner);
                     }
@@ -111,7 +111,7 @@ public class Main {
                     return;
 
                 default:
-                    System.out.println("⚠ Opción no válida.");
+                    System.out.println(" ⚠️Opción no válida.");
             }
         }
     }
@@ -173,7 +173,7 @@ public class Main {
 
     static void iniciarChat(Scanner scanner) {
         if (usuariosEnSala.isEmpty()) {
-            System.out.println("⚠ No hay usuarios en la sala.");
+            System.out.println("⚠️No hay usuarios en la sala.");
             return;
         }
 
